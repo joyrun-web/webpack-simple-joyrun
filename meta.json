@@ -9,7 +9,7 @@
       "type": "string",
       "required": true,
       "label": "Project description",
-      "default": "A Vue.js project"
+      "default": "Joyrun H5 activity"
     },
     "author": {
       "type": "string",
@@ -55,6 +55,27 @@
           "name": "yes, use sass",
           "value": "sass",
           "short": "sass"
+        },
+        {
+          "name": "no",
+          "value": "none",
+          "short": "none"
+        }
+      ]
+    },
+    "componentLibrary": {
+      "type": "list",
+      "message": "Whether or not to use component library?",
+      "choices": [
+        {
+          "name": "yes, use vux",
+          "value": "vux",
+          "short": "vux"
+        },
+        {
+          "name": "yes, use mint-ui",
+          "value": "mintUi",
+          "short": "mintUi"
         },
         {
           "name": "no",

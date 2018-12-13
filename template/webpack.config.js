@@ -1,5 +1,6 @@
 var path = require('path')
-var webpack = require('webpack')
+var webpack = require('webpack'){{#if_eq componentLibrary "vux"}}
+const vuxLoader = require('vux-loader'){{/if_eq}}
 var HtmlWebpackPlugin = require('html-webpack-plugin')
 var HtmlWebpackHarddiskPlugin = require('html-webpack-harddisk-plugin')
 var CleanWebpackPlugin = require('clean-webpack-plugin')
@@ -21,7 +22,7 @@ module.exports = {
   ],
   output: {
     path: path.resolve(__dirname, './dist'),
-    publicPath: process.env.NODE_ENV === 'production' ? '/activity/dist/' : '/dist/',
+    publicPath: process.env.NODE_ENV === 'production' ? '/activity/{{ name }}/dist/' : '/dist/',
     filename: process.env.NODE_ENV === 'production' ? 'build.[chunkhash:5].js' : 'build.js'
   },
   module: {
@@ -117,22 +118,27 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       title: '{{ name }}',
-      template: 'src/template/index.html',
+      template: './src/template/index.html',
       filename: path.resolve(__dirname, './index.html'),
       inject: true,
-      hash: true,
-      minify: {
-        removeComments: true,
-        collapseWhitespace: true,
-        removeAttributeQuotes: true
-      },
-      alwaysWriteToDisk: true
+      alwaysWriteToDisk: false
     }),
     new HtmlWebpackHarddiskPlugin({
       outputPath: path.resolve(__dirname, './index.html')
     })
   ]
 }
+
+{{#if_eq componentLibrary "vux"}}
+module.exports = vuxLoader.merge(module.exports, {
+  plugins: [
+    'vux-ui',
+    {
+      name: 'duplicate-style'
+    }
+  ]
+})
+{{/if_eq}}
 
 if (process.env.NODE_ENV === 'production') {
   module.exports.devtool = '#source-map'
@@ -151,6 +157,7 @@ if (process.env.NODE_ENV === 'production') {
     }),
     new webpack.LoaderOptionsPlugin({
       minimize: true
-    })
+    }),
+    new CleanWebpackPlugin(['dist'])
   ])
 }

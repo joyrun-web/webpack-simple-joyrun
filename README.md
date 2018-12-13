@@ -1,8 +1,7 @@
 ﻿### 如何使用
 
-初始化项目时，模板名为 YOLO0927/webpack-simple-joyrun 即可，因为 vue-init 中是使用 download-git-repo 包的，所以下载模板输入 作者名/仓库名 即可,使用本地模板加上 --offline 参数即可
-> eg1: vue init YOLO0927/webpack-simple-joyrun#master \<project-name\>  
-> eg2: vue init YOLO0927/webpack-simple-joyrun#v1.0.0 \<project-name\>
+初始化项目时，模板名为 YOLO0927/webpack-simple-joyrun#dev 即可，因为 vue-init 中是使用 download-git-repo 包的，所以下载模板输入 作者名/仓库名 即可,使用本地模板加上 --offline 参数即可
+> eg: vue init YOLO0927/webpack-simple-joyrun \<project-name\>   
 
 
 ### 与 vue 的2种官方模板有何变动
@@ -18,9 +17,15 @@
     + 路由改变时的动画类型: 会根据是否选择动画而判断是否插入动画样式代码;
 6.  vue-router 主配置文件中增加判断当前执行环境，若为开发环境则 mode 为 `hashmap`，若为生产环境则为 `history`, base 选项也对应判断了;
 7.  增加 ESlint 的引入来规范代码风格，目前会询问是否使用，若使用，则会询问选择 ESlint 初始配置模板，目前统一默认只有一个选项 Standard，以后如果有需要，再进行模板添加，已在 ESlint 全局变量配置中添加了 $ 变量，由此避免 Eslint 对外部 script 引入导致的 $ 警告错误;
-8.  引入 `src/template/index.html` 作为模板来生成项目首页 `/index.html`, 并引入 `html-webpack-harddisk-plugin` 插件使 dev-server 启动时也会生成 `/index.html` 令 dev-server 自动打开的 `/index.html` 有址可寻而不会导致一定要build才会产生解析后的 html，引入模板来生成首页带来的优点有：方便判断参数、统一优化、可根据环境来自动改变出口路径而不会产生使用相对路径导致嵌套路由刷新后由于使用相对路径带来所有资源获取地址错误的情况等等好处。
+8.  引入 `src/template/index.html` 作为模板来生成项目首页 `/index.html`, 并引入 `html-webpack-harddisk-plugin` 插件使生产环境下打包时可以重写 `html-webpack-plugin` 生成文件的路径而不会使其默认一定是在指定出口目录下的相对路径。
+9.  每次生产环境下 build 会在生成 dist/build.[hash:5].js 来解决服务器 nginx 的静态资源缓存问题，并且会自动利用 `src/template/index.html` 的模板文件生成新的 `/index.html` 脚本路径将自动注入。
+10. 如若对模板有特殊的模块分割或其他需求，可以自行将模板由 html => ejs 或其他来做模板首页，并对其进行代码分割或文件分割等。
+11. 增加组件库初始化选择安装 mint-ui or vux or none。
 
-**注： 由于 `html-webpack-harddisk-plugin` 插件是使用 `html-webpack-plugin` 的 after-emit(生成完毕并输出到内存后触发此钩子) hooks 异步触发生成文件的，所以这是一个异步的过程，dev-server 的 open 选项是在 bundle 成功执行后就会立即打开，所以第一次生成 html 时如果 open 选项为 true 会出现 404 的现象，此时看着目录等待异步生成 html 文件结束后刷新即可，本模板默认已关闭 open 选项。**
+**注： 由于 `html-webpack-harddisk-plugin` 插件是使用 `html-webpack-plugin` 的 after-emit(生成完毕并输出到内存后触发此钩子) hooks 异步触发生成文件的，所以在启动 dev-server 前我们会先使用 webpack build 一次(此时环境是 development 所以不用担心过多的优化)用于生成可读的 index.html 作为物理文件来进行本地 express 的访问路径，在此后修改代码热重载或热替换时将会自动读取内存中的脚本，所以我们引入了 clean-webpack-plugin 清除多余的 dev 下第一次生成 dist/*.js 以及多余的以往版本**
+
+**重要：如果服务使用了nginx，默认会缓存 html 静态文件，那么每次改动 js 文件名时，由于删除了上一次的 js 文件，此时 html 若有缓存会读取上一版本的 js 文件，而此时上一版本已经不在了，所以大家要么手动添加让 nginx 不缓存 html 文件，要么就别删 dist 内原本的 js 文件**
+=======
 
   第 8 点ps：直接使用 dev-server 不会像使用 `webpack-dev-middleware` 中间件来启动服务一样自由的调用读取 `html-webpack-plugin` 后的解析文件保存在内存中作为首页打开，dev-server是不会等待 `html-webpack-plugin` 执行后再启动的，所以这里才引入了 `html-webpack-harddisk-plugin` 而不用我自己手动写多一个脚本~
 
@@ -29,5 +34,5 @@
    + https://github.com/vuejs/vue-cli/tree/master#local-templates 从这里开始看即可
 2. webpack-simple 的 meta.json 与 webpack 的 meta.js 是基于 inquirer 包实现与用户的便捷交互的, 所以需要添加或更改、删除配置可参照文档即可
    + https://www.npmjs.com/package/inquirer
-3. vue-init 的 generate.js 中已经注册了 2 个命令来帮助我们在模板中判断变量，`if_eq` 与 `unless_eq`，如果想自己更改 vue-init 自定义更多命令，可以查看
-   + https://github.com/wycats/handlebars.js 在其中去找到 registerHelper 去注册命令
+3. vue-cli 中(unix /usr/local/lib/node_modules) 的 generate.js 中已经注册了 2 个命令来帮助我们在模板中判断变量，`if_eq` 与 `unless_eq`，如果想自己更改 vue-init 自定义更多命令，可以查看 handlebars 文档
+   + https://github.com/wycats/handlebars.js 在其中去找到 registerHelper 去注册更多命令
